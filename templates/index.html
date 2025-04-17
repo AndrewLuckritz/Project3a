@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Visualizer</title>
+</head>
+<body>
+    <h1>Stock Data Visualizer</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, message in messages %}
+            <li style="color: red;">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('stocks.visualize') }}" method="POST">
+        <label>Stock Symbol: <input type="text" name="symbol" required></label><br><br>
+
+        <label>Chart Type:
+            <select name="chart_type">
+                <option value="Bar">Bar</option>
+                <option value="Line">Line</option>
+            </select>
+        </label><br><br>
+
+        <label>Time Series:
+            <select name="time_series">
+                <option value="TIME_SERIES_INTRADAY">Intraday</option>
+                <option value="TIME_SERIES_DAILY">Daily</option>
+                <option value="TIME_SERIES_WEEKLY">Weekly</option>
+                <option value="TIME_SERIES_MONTHLY">Monthly</option>
+            </select>
+        </label><br><br>
+
+        <label>Start Date: <input type="date" name="start_date" required></label><br><br>
+        <label>End Date: <input type="date" name="end_date" required></label><br><br>
+
+        <button type="submit">Generate Chart</button>
+    </form>
+
+    {% if chart %}
+        <hr>
+        <h2>{{ symbol }} Stock Chart</h2>
+        <p>Date Range: {{ start.strftime('%Y-%m-%d') }} to {{ end.strftime('%Y-%m-%d') }}</p>
+        <object type="image/svg+xml" data="{{ chart_path }}" width="90%" height="500"></object>
+    {% endif %}
+</body>
+</html>
