@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, Blueprint, flash
-from datetime import datetime
+from datetime import datetime, date
 import requests
 import pygal
 from pygal.style import LightColorizedStyle
@@ -32,27 +32,28 @@ def visualize():
     if start_date > end_date:
         flash("Start date must be before end date.", 'error')
         return redirect(url_for('stocks.index'))
+    
+    today = date.today()
+    if start_date.date() > today or end_date.date() > today:
+        flash("Dates cannot be in the future. Please select a valid date range.", 'error')
+        return redirect(url_for('stocks.index'))
 
     data = fetch_stock_data(symbol, time_series)
-    if not data:
-        flash("Could not retrieve data from API.", 'error')
+    if not data or "Error Message" in data or "Note" in data:
+        flash(f"'{symbol}' is not a valid stock symbol. Please try again.", 'error')
         return redirect(url_for('stocks.index'))
-
-    if "Error Message" in data or "Note" in data:
-        flash(data.get("Error Message") or data.get("Note"), 'error')
-        return redirect(url_for('stocks.index'))
-
+    
     time_series_key = next((k for k in data if "Time Series" in k), None)
     if not time_series_key:
-        flash("Unexpected data format from API.", 'error')
+        flash(f"No data available for '{symbol}'. Please try another stock.", 'error')
         return redirect(url_for('stocks.index'))
 
     dates, open_prices, high_prices, low_prices, close_prices = [], [], [], [], []
     for date_str, values in sorted(data[time_series_key].items()):
         try:
-            date = datetime.strptime(date_str.split()[0], "%Y-%m-%d")
-            if start_date <= date <= end_date:
-                dates.append(date.strftime("%Y-%m-%d"))
+            current_date = datetime.strptime(date_str.split()[0], "%Y-%m-%d")
+            if start_date <= current_date <= end_date:
+                dates.append(current_date.strftime("%Y-%m-%d"))
                 open_prices.append(float(values["1. open"]))
                 high_prices.append(float(values["2. high"]))
                 low_prices.append(float(values["3. low"]))
